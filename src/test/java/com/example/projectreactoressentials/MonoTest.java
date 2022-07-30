@@ -70,5 +70,30 @@ class MonoTest {
 
     }
 
+    @Test
+    void monoSubscriberConsumerError() {
+
+        String name = "Gustavo Santos";
+        //Publisher
+        Mono<String> mono = Mono.just(name)
+                .map(s -> {
+                    throw new RuntimeException("Testing with error");
+                });
+
+        //                  Consumer                       errorConsumer
+        mono.subscribe(s -> log.info("Value{}", s), s -> log.error("Algo deu errado"));
+        mono.subscribe(s -> log.info("Value{}", s), Throwable::printStackTrace);
+
+
+        log.info("----------------------------");
+
+        //Verify
+        StepVerifier
+                .create(mono)//Create a publisher
+                .expectError(RuntimeException.class)// Verify that the object arrived.
+                .verify();
+
+    }
+
 
 }
