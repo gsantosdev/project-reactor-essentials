@@ -50,4 +50,25 @@ class MonoTest {
 
     }
 
+    @Test
+    void monoSubscriberConsumer() {
+
+        String name = "Gustavo Santos";
+        //Publisher
+        Mono<String> mono = Mono.just(name).log();
+
+        //                   Consumer
+        mono.subscribe(s -> log.info("Value {}", s));
+
+        log.info("----------------------------");
+
+        //Verify
+        StepVerifier
+                .create(mono)//Create a publisher
+                .expectNext(name)// Verify that the object arrived.
+                .verifyComplete();
+
+    }
+
+
 }
