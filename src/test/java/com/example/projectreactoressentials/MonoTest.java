@@ -95,5 +95,26 @@ class MonoTest {
 
     }
 
+    @Test
+    void monoSubscriberConsumerComplete() {
+
+        String name = "Gustavo Santos";
+        //Publisher
+        Mono<String> mono = Mono.just(name)
+                .log()
+                .map(String::toUpperCase);
+
+        //                  Consumer                       errorConsumer               CompleteConsumer
+        mono.subscribe(s -> log.info("Value {}", s), Throwable::printStackTrace, () -> log.info("FINISHED!"));
+
+        log.info("----------------------------");
+
+        //Verify
+        StepVerifier
+                .create(mono)//Create a publisher
+                .expectNext(name.toUpperCase())// Verify that the object arrived.
+                .verifyComplete();
+
+    }
 
 }
