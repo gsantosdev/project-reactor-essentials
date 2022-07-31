@@ -2,7 +2,6 @@ package com.example.projectreactoressentials;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
-import org.reactivestreams.Subscription;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -127,7 +126,7 @@ class MonoTest {
                 .map(String::toUpperCase);
 
         //                  Consumer                       errorConsumer               CompleteConsumer       ConsumerSubscription
-        mono.subscribe(s -> log.info("Value {}", s), Throwable::printStackTrace, () -> log.info("FINISHED!"), Subscription::cancel);
+        mono.subscribe(s -> log.info("Value {}", s), Throwable::printStackTrace, () -> log.info("FINISHED!"), subscription -> subscription.request(5));
 
 
         log.info("----------------------------");
