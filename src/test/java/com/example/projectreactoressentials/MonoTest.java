@@ -17,11 +17,11 @@ import reactor.test.StepVerifier;
  * 2. Subscription is created
  * 3. Publisher <- onSubscribe with subscription <- Publisher
  * 4. Subscription <- (request with N objects) Subscription
- * 5. Publisher -> (onNext) Subscriber
+ * 5. Publisher -> (onNext -> send to subscriber) Subscriber
  * até:
  * 1. Publisher send all the requested data.
  * 2. Publisher send all data it has. (onComplete) subscriber and subscription are canceled.
- * 3. Quando tem um erro. (onError) subscriber and subscription are canceled.
+ * 3. When an error occurs. (onError) subscriber and subscription are canceled.
  */
 
 /**
@@ -43,9 +43,9 @@ class MonoTest {
 
         //Verify
         StepVerifier
-                .create(mono)//Create a publisher
-                .expectNext(name)// Verify that the object arrived.
-                .verifyComplete();
+            .create(mono)//Create a publisher
+            .expectNext(name)// Verify that the object arrived.
+            .verifyComplete();
 
     }
 
@@ -63,9 +63,9 @@ class MonoTest {
 
         //Verify
         StepVerifier
-                .create(mono)//Create a publisher
-                .expectNext(name)// Verify that the object arrived.
-                .verifyComplete();
+            .create(mono)//Create a publisher
+            .expectNext(name)// Verify that the object arrived.
+            .verifyComplete();
 
     }
 
@@ -75,9 +75,9 @@ class MonoTest {
         String name = "Gustavo Santos";
         //Publisher
         Mono<String> mono = Mono.just(name)
-                .map(s -> {
-                    throw new RuntimeException("Testing with error");
-                });
+            .map(s -> {
+                throw new RuntimeException("Testing with error");
+            });
 
         //                  Consumer                       errorConsumer
         mono.subscribe(s -> log.info("Value{}", s), s -> log.error("Algo deu errado"));
@@ -88,9 +88,9 @@ class MonoTest {
 
         //Verify
         StepVerifier
-                .create(mono)//Create a publisher
-                .expectError(RuntimeException.class)// Verify that the object arrived.
-                .verify();
+            .create(mono)//Create a publisher
+            .expectError(RuntimeException.class)// Verify that the object arrived.
+            .verify();
 
     }
 
@@ -100,8 +100,8 @@ class MonoTest {
         String name = "Gustavo Santos";
         //Publisher
         Mono<String> mono = Mono.just(name)
-                .log()
-                .map(String::toUpperCase);
+            .log()
+            .map(String::toUpperCase);
 
         //                  Consumer                       errorConsumer               CompleteConsumer
         mono.subscribe(s -> log.info("Value {}", s), Throwable::printStackTrace, () -> log.info("FINISHED!"));
@@ -110,9 +110,9 @@ class MonoTest {
 
         //Verify
         StepVerifier
-                .create(mono)//Create a publisher
-                .expectNext(name.toUpperCase())// Verify that the object arrived.
-                .verifyComplete();
+            .create(mono)//Create a publisher
+            .expectNext(name.toUpperCase())// Verify that the object arrived.
+            .verifyComplete();
 
     }
 
@@ -122,8 +122,8 @@ class MonoTest {
         String name = "Gustavo Santos";
         //Publisher
         Mono<String> mono = Mono.just(name)
-                .log()
-                .map(String::toUpperCase);
+            .log()
+            .map(String::toUpperCase);
 
         //                  Consumer                       errorConsumer               CompleteConsumer       ConsumerSubscription
         mono.subscribe(s -> log.info("Value {}", s), Throwable::printStackTrace, () -> log.info("FINISHED!"), subscription -> subscription.request(5));
@@ -133,10 +133,76 @@ class MonoTest {
 
         //Verify
         StepVerifier
-                .create(mono)//Create a publisher
-                .expectNext(name.toUpperCase())// Verify that the object arrived.
-                .verifyComplete();
+            .create(mono)//Create a publisher
+            .expectNext(name.toUpperCase())// Verify that the object arrived.
+            .verifyComplete();
 
     }
 
+    @Test
+    void monoDoOnMethods() {
+
+        String name = "Gustavo Santos";
+        //Publisher
+        Mono<Object> mono = Mono.just(name)
+            .log()
+            .map(String::toUpperCase)
+            .doOnSubscribe(subscription -> log.info("Subscribed"))
+            .doOnRequest(longNumber -> log.info("Request received, starting doing something..."))
+            .doOnNext(s -> log.info("Value is here. Executing doOnNext {}", s))
+            .flatMap(s -> Mono.empty())
+            .doOnNext(s -> log.info("Value is here. Executing doOnNext {}", s))
+            .doOnSuccess(s -> log.info("doOnSuccess executed {} ", s));
+
+        //                  Consumer                       errorConsumer               CompleteConsumer
+        mono.subscribe(s -> log.info("Value {}", s), Throwable::printStackTrace, () -> log.info("FINISHED!"));
+
+        log.info("----------------------------");
+
+
+    }
+
+    @Test
+    void monoDoOnError() {
+
+        Mono<Object> error = Mono.error(new IllegalArgumentException("Illegal argument exception error"))
+            .doOnError(e -> log.error("Error message: {}", e.getMessage())).log();
+
+
+        StepVerifier.create(error)
+            .expectError(IllegalArgumentException.class)
+            .verify();
+    }
+
+    @Test
+    void monoDoOnErrorResume() {
+
+        String name = "Gustavo Santos";
+
+        Mono<Object> error = Mono.error(new IllegalArgumentException("Illegal argument exception error"))
+            .onErrorResume(e -> {
+                log.error("Inside on error resume");
+                return Mono.just(name);
+            })
+            .onErrorReturn("EMPTY")
+            .log();
+
+
+        StepVerifier.create(error)
+            .expectNext("EMPTY")
+            .verifyComplete();
+    }
+
+    @Test
+    void monoDoOnErrorReturn() {
+
+        Mono<Object> error = Mono.error(new IllegalArgumentException("Illegal argument exception error"))
+            .onErrorReturn("EMPTY")
+            .log();
+
+
+        StepVerifier.create(error)
+            .expectNext("EMPTY")
+            .verifyComplete();
+    }
 }
