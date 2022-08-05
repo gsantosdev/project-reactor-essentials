@@ -25,7 +25,7 @@ import reactor.test.StepVerifier;
  */
 
 /**
- * TESTS WITH THE SUBSCRIBER PARAMETERS
+ * TESTS WITH THE MONO SUBSCRIBER PARAMETERS
  */
 @Slf4j
 class MonoTest {
