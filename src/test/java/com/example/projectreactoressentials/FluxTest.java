@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import reactor.core.publisher.BaseSubscriber;
+import reactor.core.publisher.ConnectableFlux;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
@@ -31,6 +32,8 @@ import java.util.List;
 
 /**
  * TESTS WITH THE FLUX SUBSCRIBER PARAMETERS
+ * Cold observables <- if no one subscribes, no publish
+ * Hot observables <- publish even if no one subscribes
  */
 @Slf4j
 public class FluxTest {
@@ -223,6 +226,36 @@ public class FluxTest {
             .log();
     }
 
+    @Test
+    public void connectableFlux(){
+        ConnectableFlux<Integer> connectableFlux = Flux.range(1, 10)
+            .log()
+            .delayElements(Duration.ofMillis(100))
+            .publish();
 
+        StepVerifier
+            .create(connectableFlux)
+            .then(connectableFlux::connect)
+            .thenConsumeWhile(i -> i <= 5)
+            .expectNext(6, 7, 8, 9, 10)
+            .expectComplete()
+            .verify();
+    }
+
+    @Test
+    public void connectableFluxAutoConnect() {
+        Flux<Integer> fluxAutoConnect = Flux.range(1, 5)
+            .log()
+            .delayElements(Duration.ofMillis(100))
+            .publish()
+            .autoConnect(2);
+
+        StepVerifier
+            .create(fluxAutoConnect)
+            .then(fluxAutoConnect::subscribe)
+            .expectNext(1, 2, 3, 4, 5)
+            .expectComplete()
+            .verify();
+    }
 }
 
