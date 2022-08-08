@@ -1,5 +1,9 @@
 package com.example.projectreactoressentials;
 
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -25,7 +29,7 @@ public class OperatorsTest {
                 log.info("Map 1 - Number {} on Thread {}", i, Thread.currentThread().getName());
                 return i;
             })
-            .subscribeOn(Schedulers.boundedElastic()) // Indica qual será thread strategy para consumo /afeta o objeto todo
+            .subscribeOn(Schedulers.boundedElastic()) // Indica qual sera thread strategy para consumo /afeta o objeto tod0
             .map(i -> {
                 log.info("Map 2 - Number {} on Thread {}", i, Thread.currentThread().getName());
                 return i;
@@ -40,7 +44,7 @@ public class OperatorsTest {
     @Test
     public void publishOnSimple() {
         Flux<Integer> flux = Flux.range(1, 4)
-            .publishOn(Schedulers.boundedElastic()) // Indica qual será thread strategy para publish / afeta o objeto a partir do momento em que é chamado
+            .publishOn(Schedulers.boundedElastic()) // Indica qual sera thread strategy para publish / afeta o objeto a partir do momento em que e chamado
             .map(i -> {
                 log.info("Map 1 - Number {} on Thread {}", i, Thread.currentThread().getName());
                 return i;
@@ -83,12 +87,12 @@ public class OperatorsTest {
     @Test
     public void multiplePublishOnSimple() {
         Flux<Integer> flux = Flux.range(1, 4)
-            .publishOn(Schedulers.single()) // afeta o objeto a partir do momento em que é chamado
+            .publishOn(Schedulers.single()) // afeta o objeto a partir do momento em que e chamado
             .map(i -> {
                 log.info("Map 1 - Number {} on Thread {}", i, Thread.currentThread().getName());
                 return i;
             })
-            .publishOn(Schedulers.boundedElastic()) // afeta o objeto a partir do momento em que é chamado
+            .publishOn(Schedulers.boundedElastic()) // afeta o objeto a partir do momento em que e chamado
             .map(i -> {
                 log.info("Map 2 - Number {} on Thread {}", i, Thread.currentThread().getName());
                 return i;
@@ -427,6 +431,39 @@ public class OperatorsTest {
             .expectSubscription()
             .expectNext("nameA1", "nameA2", "nameB1", "nameB2")
             .verifyComplete();
+    }
+
+    @Test
+    public void zipOperator() {
+
+        Flux<String> titleFlux = Flux.just("Grand Blue", "Baki");
+        Flux<String> studioFlux = Flux.just("Zero-G", "TMS Entertainment");
+        Flux<Integer> episodesFlux = Flux.just(12, 24);
+
+        Flux<Object> animeFlux = Flux
+            .zip(titleFlux, studioFlux, episodesFlux)
+            .flatMap((tuple -> Flux.just(new Anime(tuple.getT1(), tuple.getT2(), tuple.getT3()))));
+
+        animeFlux.subscribe(a -> log.info(a.toString()));
+
+        StepVerifier
+            .create(animeFlux)
+            .expectSubscription()
+            .expectNext(
+                new Anime("Grand Blue", "Zero-G", 12),
+                new Anime("Baki", "TMS Entertainment", 24))
+            .verifyComplete();
+
+    }
+
+    @AllArgsConstructor
+    @Getter
+    @ToString
+    @EqualsAndHashCode
+    static class Anime {
+        private String title;
+        private String studio;
+        private int episodes;
     }
 
     private Flux<String> findByName(String name) {
