@@ -6,7 +6,9 @@ import lombok.Getter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import reactor.blockhound.BlockHound;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -20,6 +22,11 @@ import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 public class OperatorsTest {
+
+    @BeforeAll
+    public static void setUp() {
+        BlockHound.install();
+    }
 
 
     @Test
@@ -306,7 +313,7 @@ public class OperatorsTest {
 
 
     @Test
-    public void mergeOperator() throws InterruptedException {
+    public void mergeOperator() {
         Flux<String> flux1 = Flux.just("a", "b").delayElements(Duration.ofMillis(200));
         Flux<String> flux2 = Flux.just("c", "d");
 
@@ -314,9 +321,6 @@ public class OperatorsTest {
             .delayElements(Duration.ofMillis(200))
             .log();
 
-        mergeFlux.subscribe(log::info);
-
-        Thread.sleep(1000);
 
         StepVerifier
             .create(mergeFlux)
