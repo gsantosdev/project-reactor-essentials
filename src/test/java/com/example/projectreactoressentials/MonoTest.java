@@ -1,9 +1,15 @@
 package com.example.projectreactoressentials;
 
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import reactor.blockhound.BlockHound;
+import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+
+import java.time.Duration;
 
 
 /**
@@ -29,6 +35,29 @@ import reactor.test.StepVerifier;
  */
 @Slf4j
 class MonoTest {
+
+    @BeforeAll
+    public static void setUp() {
+        BlockHound.install();
+    }
+
+    @Test
+    public void BlockHoundWorking() {
+        try {
+            Mono.delay(Duration.ofSeconds(1))
+                .doOnNext(it -> {
+                    try {
+                        Thread.sleep(10);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .block();
+        } catch (Exception e) {
+            Assertions.assertTrue(e.getCause() instanceof BlockingOperationError);
+        }
+    }
+
 
     @Test
     void monoSubscriber() {
@@ -184,12 +213,11 @@ class MonoTest {
                 log.error("Inside on error resume");
                 return Mono.just(name);
             })
-            .onErrorReturn("EMPTY")
             .log();
 
 
         StepVerifier.create(error)
-            .expectNext("EMPTY")
+            .expectNext(name)
             .verifyComplete();
     }
 

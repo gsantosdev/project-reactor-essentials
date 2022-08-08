@@ -6,7 +6,6 @@ plugins {
 
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '17'
 
 configurations {
 	compileOnly {
@@ -24,6 +23,7 @@ dependencies {
 	compileOnly 'org.projectlombok:lombok:1.18.24'
 	annotationProcessor 'org.projectlombok:lombok:1.18.24'
 	testCompileOnly 'org.projectlombok:lombok:1.18.24'
+	testImplementation 'io.projectreactor.tools:blockhound:1.0.6.RELEASE'
 
 	testAnnotationProcessor 'org.projectlombok:lombok:1.18.24'
 	annotationProcessor 'org.projectlombok:lombok'
@@ -33,4 +33,11 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+tasks.withType(Test).all {
+	if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
+		jvmArgs += [
+				"-XX:+AllowRedefinitionToAddDeleteMethods"
+		]
+	}
 }
