@@ -19,10 +19,10 @@ import java.time.Duration;
  * 3. Backpressure
  * <p>
  * Interfaces
- * 1. Publisher <- (subscribe) Subscriber
+ * 1. Publisher (Vai emitir os eventos) <- (subscribe) Subscriber
  * 2. Subscription is created
- * 3. Publisher <- onSubscribe with subscription <- Publisher
- * 4. Subscription <- (request with N objects) Subscription
+ * 3. Publisher executa o onSubscribe com o Subscription
+ * 4. Subscription <- (request with N objects) Subscriber (Gerenciar backpressure)
  * 5. Publisher -> (onNext -> send to subscriber) Subscriber
  * até:
  * 1. Publisher send all the requested data.
@@ -63,7 +63,7 @@ class MonoTest {
     void monoSubscriber() {
 
         String name = "Gustavo Santos";
-        //Publisher
+
         Mono<String> mono = Mono.just(name).log();
 
         mono.subscribe();
@@ -103,7 +103,7 @@ class MonoTest {
 
         String name = "Gustavo Santos";
         //Publisher
-        Mono<String> mono = Mono.just(name)
+        Mono<Object> mono = Mono.just(name)
             .map(s -> {
                 throw new RuntimeException("Testing with error");
             });
@@ -131,7 +131,6 @@ class MonoTest {
         Mono<String> mono = Mono.just(name)
             .log()
             .map(String::toUpperCase);
-
         //                  Consumer                       errorConsumer               CompleteConsumer
         mono.subscribe(s -> log.info("Value {}", s), Throwable::printStackTrace, () -> log.info("FINISHED!"));
 
